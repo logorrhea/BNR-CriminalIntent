@@ -1,5 +1,6 @@
 package com.trilixgroup.android.criminalintent;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.LinearLayoutManager;
@@ -9,7 +10,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.CheckBox;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import java.util.List;
 
@@ -18,8 +18,17 @@ import java.util.List;
  */
 public class CrimeListFragment extends Fragment {
 
+    private static final String TAG = "CrimeListFragment";
     private RecyclerView mCrimeRecyclerView;
     private CrimeAdapter mAdapter;
+
+    private int mLastPositionPressed = -1;
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        updateUI();
+    }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -38,8 +47,16 @@ public class CrimeListFragment extends Fragment {
         CrimeLab lab = CrimeLab.get(getActivity());
         List<Crime> crimes = lab.getCrimes();
 
-        mAdapter = new CrimeAdapter(crimes);
-        mCrimeRecyclerView.setAdapter(mAdapter);
+        if (mAdapter == null) {
+            mAdapter = new CrimeAdapter(crimes);
+            mCrimeRecyclerView.setAdapter(mAdapter);
+        } else {
+            if (mLastPositionPressed < 0) {
+                mAdapter.notifyDataSetChanged();
+            } else {
+                mAdapter.notifyItemChanged(mLastPositionPressed);
+            }
+        }
     }
 
     private class CrimeHolder extends RecyclerView.ViewHolder
@@ -60,9 +77,9 @@ public class CrimeListFragment extends Fragment {
 
         @Override
         public void onClick(View v) {
-            Toast.makeText(getActivity(),
-                    mCrime.getTitle() + " clicked",
-                    Toast.LENGTH_SHORT).show();
+            Intent i = CrimeActivity.newIntent(getActivity(), mCrime.getId());
+            mLastPositionPressed = this.getLayoutPosition();
+            startActivity(i);
         }
 
         public void bindCrime(Crime crime) {
