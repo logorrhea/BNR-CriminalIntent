@@ -28,8 +28,6 @@ public class CrimeListFragment extends Fragment {
     private RecyclerView mCrimeRecyclerView;
     private CrimeAdapter mAdapter;
 
-    // @TODO: do a better job of notifying adapter about changed rows
-//    private int mLastPositionPressed = -1;
     private boolean mSubtitleVisible = false;
 
     @Override
@@ -118,14 +116,8 @@ public class CrimeListFragment extends Fragment {
             mAdapter = new CrimeAdapter(crimes);
             mCrimeRecyclerView.setAdapter(mAdapter);
         } else {
+            mAdapter.setCrimes(crimes);
             mAdapter.notifyDataSetChanged();
-//            if (mLastPositionPressed < 0) {
-//                Log.d(TAG, "Updating whole list");
-//                mAdapter.notifyDataSetChanged();
-//            } else {
-//                Log.d(TAG, "Updating position " + mLastPositionPressed);
-//                mAdapter.notifyItemChanged(mLastPositionPressed);
-//            }
         }
 
         updateSubtitle();
@@ -149,9 +141,7 @@ public class CrimeListFragment extends Fragment {
 
         @Override
         public void onClick(View v) {
-//            Intent i = CrimeActivity.newIntent(getActivity(), mCrime.getId());
             Intent i = CrimePagerActivity.newIntent(getActivity(), mCrime.getId());
-//            mLastPositionPressed = this.getLayoutPosition();
             startActivity(i);
         }
 
@@ -168,6 +158,10 @@ public class CrimeListFragment extends Fragment {
         private List<Crime> mCrimes;
 
         public CrimeAdapter(List<Crime> crimes) {
+            mCrimes = crimes;
+        }
+
+        public void setCrimes(List<Crime> crimes) {
             mCrimes = crimes;
         }
 
