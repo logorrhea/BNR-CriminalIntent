@@ -1,6 +1,6 @@
 package com.trilixgroup.android.criminalintent;
 
-import android.content.Intent;
+import android.content.Context;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
@@ -29,6 +29,7 @@ public class CrimeListFragment extends Fragment {
     private CrimeAdapter mAdapter;
 
     private boolean mSubtitleVisible = false;
+    private Callbacks mCallbacks;
 
     @Override
     public void onResume() {
@@ -60,6 +61,18 @@ public class CrimeListFragment extends Fragment {
     }
 
     @Override
+    public void onAttach(Context context) {
+        super.onAttach(context);
+        mCallbacks = (Callbacks) context;
+    }
+
+    @Override
+    public void onDetach() {
+        super.onDetach();
+        mCallbacks = null;
+    }
+
+    @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
         super.onCreateOptionsMenu(menu, inflater);
         inflater.inflate(R.menu.fragment_crime_list, menu);
@@ -78,8 +91,8 @@ public class CrimeListFragment extends Fragment {
             case R.id.menu_item_new_crime:
                 Crime crime = new Crime();
                 CrimeLab.get(getActivity()).addCrime(crime);
-                Intent i = CrimePagerActivity.newIntent(getActivity(), crime.getId());
-                startActivity(i);
+                updateUI();
+                mCallbacks.onCrimeSelected(crime);
                 return true;
             case R.id.menu_item_show_subtitle:
                 mSubtitleVisible = !mSubtitleVisible;
@@ -108,7 +121,7 @@ public class CrimeListFragment extends Fragment {
         activity.getSupportActionBar().setSubtitle(subtitle);
     }
 
-    private void updateUI() {
+    public void updateUI() {
         CrimeLab lab = CrimeLab.get(getActivity());
         List<Crime> crimes = lab.getCrimes();
 
@@ -141,8 +154,7 @@ public class CrimeListFragment extends Fragment {
 
         @Override
         public void onClick(View v) {
-            Intent i = CrimePagerActivity.newIntent(getActivity(), mCrime.getId());
-            startActivity(i);
+            mCallbacks.onCrimeSelected(mCrime);
         }
 
         public void bindCrime(Crime crime) {
@@ -181,5 +193,9 @@ public class CrimeListFragment extends Fragment {
         public int getItemCount() {
             return mCrimes.size();
         }
+    }
+
+    public interface Callbacks {
+        void onCrimeSelected(Crime crime);
     }
 }

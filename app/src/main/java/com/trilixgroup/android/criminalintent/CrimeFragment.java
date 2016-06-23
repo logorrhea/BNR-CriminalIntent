@@ -2,6 +2,7 @@ package com.trilixgroup.android.criminalintent;
 
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
@@ -53,6 +54,7 @@ public class CrimeFragment extends Fragment {
     private Button mSuspectButton;
     private ImageButton mPhotoButton;
     private ImageView mPhotoView;
+    private Callbacks mCallbacks;
 
 
     public static CrimeFragment newInstance(UUID crimeId) {
@@ -74,6 +76,18 @@ public class CrimeFragment extends Fragment {
         UUID crimeId = (UUID) getArguments().getSerializable(ARG_CRIME_ID);
         mCrime = CrimeLab.get(getActivity()).getCrime(crimeId);
         mPhotoFile = CrimeLab.get(getActivity()).getPhotoFile(mCrime);
+    }
+
+    @Override
+    public void onAttach(Context context) {
+        super.onAttach(context);
+        mCallbacks = (Callbacks) context;
+    }
+
+    @Override
+    public void onDetach() {
+        super.onDetach();
+        mCallbacks = null;
     }
 
     @Override
@@ -99,6 +113,7 @@ public class CrimeFragment extends Fragment {
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
                 mCrime.setTitle(s.toString());
+                updateCrime();
             }
 
             @Override
@@ -125,6 +140,7 @@ public class CrimeFragment extends Fragment {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 mCrime.setSolved(isChecked);
+                updateCrime();
             }
         });
 
@@ -168,7 +184,6 @@ public class CrimeFragment extends Fragment {
         mPhotoButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Log.d(TAG, "starting camera activity");
                 startActivityForResult(captureImage, REQUEST_PHOTO);
             }
         });
@@ -187,6 +202,8 @@ public class CrimeFragment extends Fragment {
             case REQUEST_DATE:
                 Date date = (Date) data.getSerializableExtra(DatePickerFragment.EXTRA_DATE);
                 mCrime.setDate(date);
+//                Log.d(TAG, "updateCrime() after setDate()");
+                updateCrime();
                 mDateButton.setText(mCrime.getHumanDate());
                 break;
             case REQUEST_CONTACT:
@@ -200,15 +217,16 @@ public class CrimeFragment extends Fragment {
 
                     c.moveToFirst();
                     String suspect = c.getString(0);
-                    Log.d(TAG, suspect);
                     mCrime.setSuspect(suspect);
+                    updateCrime();
                     mSuspectButton.setText(suspect);
                 } finally {
                     c.close();
                 }
                 break;
             case REQUEST_PHOTO:
-                Log.d(TAG, "updatePhotoView() called");
+                updateCrime();
+//                Log.d(TAG, "updateCrime() after updatePhotoView()");
                 updatePhotoView();
                 break;
         }
@@ -230,11 +248,21 @@ public class CrimeFragment extends Fragment {
 
     private void updatePhotoView() {
         if (mPhotoFile == null || !mPhotoFile.exists()) {
-            Log.d(TAG, "photofile null or does not exist");
             mPhotoView.setImageDrawable(null);
         } else {
             Bitmap bitmap = PictureUtils.getScaledBitmap(mPhotoFile.getPath(), getActivity());
             mPhotoView.setImageBitmap(bitmap);
         }
+    }
+
+    private void updateCrime() {
+        CrimeLab.get(getActivity()).updateCrime(mCrime);
+        Log.d(TAG, "Crime updated");
+        mCallbacks.onCrimeUpdated(mCrime);
+        Log.d(TAG, "mCallbacks ran");
+    }
+
+    public interface Callbacks {
+        void onCrimeUpdated(Crime crime);
     }
 }
